@@ -1,6 +1,7 @@
 <!DOCTYPE html>
-<html>
+<html ng-app-="fisheyeApp" xmlns:ng="http://angularjs.org">
 <!-- removed for now, causes problems in Firefox: manifest="svg-editor.manifest" -->
+<!-- working on fisheye -->
 <head>
 <meta charset="utf-8" />
 <meta http-equiv="X-UA-Compatible" content="IE=Edge, chrome=1"/>
@@ -12,11 +13,19 @@
 <link rel="stylesheet" href="svg-editor.css" type="text/css"/>
 <link rel="stylesheet" href="spinbtn/JQuerySpinBtn.css" type="text/css"/>
 <link rel="stylesheet" href="custom.css" type="text/css"/>
+<!--<link rel="stylesheet" href="fisheye/css/fisheye.css" type="text/css"/>-->
+<!--<link rel="stylesheet" href="fisheye/css/schematic.css" type="text/css"/>-->
+<link rel="stylesheet" href="fisheye/fisheye-views-0.1.0-SNAPSHOT.css" type="text/css"/>
+
 <!--{if jquery_release}>
   <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.7.1/jquery.min.js"></script>
 <!{else}-->
   <script src="jquery.js"></script>
 <!--{endif}-->
+<script src="angular/angular.min.js"></script>
+<script src="angular/angular-resource.min.js"></script>
+<script src="angular/angular-loader.min.js"></script>
+<!--<script type="text/javascript" data-main="fisheye/main" src="requirejs/require.js"></script>-->
 
 <script src="js-hotkeys/jquery.hotkeys.min.js"></script>
 <script src="jquerybbq/jquery.bbq.min.js"></script>
@@ -52,6 +61,14 @@
   <script src="contextmenu.js"></script>
 <!--{endif}-->
 
+<!--  this must run here to ensure svg-edit.js has been loaded. -->
+<script src="fisheye/fisheye-views-tpls-0.1.0-SNAPSHOT.js"></script>
+<script type="text/javascript" src="fisheye/premain.js"></script>
+<script type="text/javascript" src="fisheye/main.js"></script>
+
+<!-- Fisheye Extensions -->
+<script type="text/javascript" src="fisheye/ext-fisheye-shapes.js"></script>
+
 <!-- always minified scripts -->
 <script src="jquery-ui/jquery-ui-1.8.17.custom.min.js"></script>
 <script src="jgraduate/jpicker.js"></script>
@@ -65,8 +82,9 @@ by creating the following file and adding by calls to svgEditor.setConfig -->
 <link rel="alternate" type="application/atom+xml" title="SVG-edit Updates (Issues/Fixes/Commits)" href="http://code.google.com/feeds/p/svg-edit/updates/basic" />
 
 <!-- Add script with custom handlers here -->
-<title>SVG-edit</title>
+<title>Fisheye - TotalGrid.org</title>
 </head>
+<!--<body ng-controller="fisheye.controllers.FisheyeMainController">-->
 <body>
 <div id="svg_editor">
 
@@ -92,29 +110,36 @@ by creating the following file and adding by calls to svgEditor.setConfig -->
 </div>
 
 <div id="sidepanels">
-	<div id="layerpanel">
-		<h3 id="layersLabel">Layers</h3>
-		<fieldset id="layerbuttons">
-			<div id="layer_new" class="layer_button"  title="New Layer"></div>
-			<div id="layer_delete" class="layer_button"  title="Delete Layer"></div>
-			<div id="layer_rename" class="layer_button"  title="Rename Layer"></div>
-			<div id="layer_up" class="layer_button"  title="Move Layer Up"></div>
-			<div id="layer_down" class="layer_button"  title="Move Layer Down"></div>
-			<div id="layer_moreopts" class="layer_button"  title="More Options"></div>
-		</fieldset>
-		
-		<table id="layerlist">
-			<tr class="layer">
-				<td class="layervis"></td>
-				<td class="layername">Layer 1</td>
-			</tr>
-		</table>
-		<span id="selLayerLabel">Move elements to:</span>
-		<select id="selLayerNames" title="Move selected elements to a different layer" disabled="disabled">
-			<option selected="selected" value="layer1">Layer 1</option>
-		</select>
+	<div class="tool" id="properties-tool">
+		<fv-properties></fv-properties>
+		<!--<ng-include src="fisheye/partials/properties.html"/>-->
 	</div>
-	<div id="sidepanel_handle" title="Drag left/right to resize side panel [X]">L a y e r s</div>
+	<!--<div id="layerpanel">-->
+		<!--<h3 id="layersLabel">Layers</h3>-->
+		<!--<fieldset id="layerbuttons">-->
+			<!--<div id="layer_new" class="layer_button"  title="New Layer"></div>-->
+			<!--<div id="layer_delete" class="layer_button"  title="Delete Layer"></div>-->
+			<!--<div id="layer_rename" class="layer_button"  title="Rename Layer"></div>-->
+			<!--<div id="layer_up" class="layer_button"  title="Move Layer Up"></div>-->
+			<!--<div id="layer_down" class="layer_button"  title="Move Layer Down"></div>-->
+			<!--<div id="layer_moreopts" class="layer_button"  title="More Options"></div>-->
+		<!--</fieldset>-->
+		<!---->
+		<!--<table id="layerlist">-->
+			<!--<tr class="layer">-->
+				<!--<td class="layervis"></td>-->
+				<!--<td class="layername">Layer 1</td>-->
+			<!--</tr>-->
+		<!--</table>-->
+		<!--<span id="selLayerLabel">Move elements to:</span>-->
+		<!--<select id="selLayerNames" title="Move selected elements to a different layer" disabled="disabled">-->
+			<!--<option selected="selected" value="layer1">Layer 1</option>-->
+		<!--</select>-->
+	<!--</div>-->
+	<div class="tool" id="symbollibrary-tool">
+		<!--<ng-include src="fisheye/partials/symbollibrary.html"/>-->
+	</div>
+	<div id="sidepanel_handle" title="Drag left/right to resize side panel [X]">T o o l s</div>
 </div>
 
 <div id="main_button">
@@ -797,6 +822,6 @@ by creating the following file and adding by calls to svgEditor.setConfig -->
 	<li><a href="#merge_down">Merge Down</a></li>
 	<li><a href="#merge_all">Merge All</a></li>
 </ul>
-
+<!--<ng-include src="'fisheye/partials/openSchematic.html'" />-->
 </body>
 </html>
