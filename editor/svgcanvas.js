@@ -4607,6 +4607,7 @@ this.setSvgString = function(xmlString) {
 //
 // Parameters:
 // xmlString - The SVG as XML text.
+// scaleToCanvas - scaleToCanvas the symbol to 1/3 of canvas width or height. Optional and defaults to true.
 //
 // Returns:
 // This function returns null if the import was unsuccessful, or the element otherwise.
@@ -4617,8 +4618,10 @@ this.setSvgString = function(xmlString) {
 // arbitrary transform lists, but makes some assumptions about how the transform list 
 // was obtained
 // * import should happen in top-left of current zoomed viewport	
-this.importSvgString = function(xmlString) {
+this.importSvgString = function(xmlString, scaleToCanvas) {
 	var j, ts;
+	if( scaleToCanvas === undefined)
+		scaleToCanvas = true;
 	try {
 		// Get unique ID
 		var uid = svgedit.utilities.encode64(xmlString.length + xmlString).substr(0,32);
@@ -4667,13 +4670,17 @@ this.importSvgString = function(xmlString) {
 			var canvasw = +svgcontent.getAttribute('width'),
 				canvash = +svgcontent.getAttribute('height');
 			// imported content should be 1/3 of the canvas on its largest dimension
-			
-			if (innerh > innerw) {
-				ts = 'scale(' + (canvash/3)/vb[3] + ')';
+
+			if( scaleToCanvas) {
+				if (innerh > innerw) {
+					ts = 'scale(' + (canvash/3)/vb[3] + ')';
+				} else {
+					ts = 'scale(' + (canvash/3)/vb[2] + ')';
+				}
 			} else {
-				ts = 'scale(' + (canvash/3)/vb[2] + ')';
+				ts = 'scale(1)';
 			}
-			
+
 			// Hack to make recalculateDimensions understand how to scale
 			ts = 'translate(0) ' + ts + ' translate(0)';
 			
@@ -4736,6 +4743,70 @@ this.importSvgString = function(xmlString) {
 	// we want to return the element so we can automatically select it
 	return use_el;
 };
+
+//Function: importSvgStringAsSvgElement
+//This function imports the input SVG XML as a <symbol> in the <defs>, then adds a
+//<use> to the current layer.
+//
+//Parameters:
+//xmlString - The SVG as XML text.
+//
+//Returns:
+//This function returns false if the import was unsuccessful, true otherwise.
+//TODO:
+//* properly handle if namespace is introduced by imported content (must add to svgcontent
+//and update all prefixes in the imported node)
+//* properly handle recalculating dimensions, recalculateDimensions() doesn't handle
+//arbitrary transform lists, but makes some assumptions about how the transform list
+//was obtained
+//* import should happen in top-left of current zoomed viewport
+this.importSvgStringAsSvgElement = function(xmlString) {
+
+	try {
+		// Get unique ID
+		var uid = svgedit.utilities.encode64(xmlString.length + xmlString).substr(0,32);
+
+		var useExisting = false;
+
+		// Look for symbol and make sure symbol exists in image
+		if(import_ids[uid]) {
+			if( $(import_ids[uid].symbol).parents('#svgroot').length ) {
+				useExisting = true;
+			}
+		}
+
+		var batchCmd = new svgedit.history.BatchCommand("Import SVG as SVG element");
+
+		if(useExisting) {
+			var symbol = import_ids[uid].symbol;
+			var ts = import_ids[uid].xform;
+		} else {
+			//var svg = this.makeSvgElementFromString( xmlString);
+			var svg = svgedit.utilities.text2xml(xmlString).firstChild
+
+			var canvasw = +svgcontent.getAttribute("width"),
+					canvash = +svgcontent.getAttribute("height");
+
+			$(svg).attr( {x: canvasw / 2, y: canvash / 2});
+		}
+
+
+		(current_group || getCurrentDrawing().getCurrentLayer()).appendChild(svg);
+		batchCmd.addSubCommand(new svgedit.history.InsertElementCommand(svg));
+		clearSelection();
+		addToSelection([use_el]);
+
+		addCommandToHistory(batchCmd);
+		call("changed", [svgcontent]);
+
+	} catch(e) {
+		console.log(e);
+		return false;
+	}
+
+	return true;
+};
+
 
 // TODO(codedread): Move all layer/context functions in draw.js
 // Layer API Functions

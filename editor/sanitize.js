@@ -94,6 +94,32 @@ var svgWhiteList_ = {
   "semantics": []
 };
 
+/**
+ * Adds entries to the allowed attributes whitelist.
+ * @author Adam Bender (abender@greenenergycorp.com)
+ *
+ * @param element The element you want to the on which attributes will be appear.
+ * @param namespace A namespace {uri:'uri',prefix:'prefix} that the attribute(s) belongs in.
+ * @param attributes A array of attributes to add to the whitelist (can also be a single element).
+ **/
+svgedit.sanitize.addWhiteListException = function(element,namespace,attributes) {
+	if(!(namespace.uri in REVERSE_NS)) {
+    REVERSE_NS[namespace.uri] = namespace.prefix;
+		NS[namespace.prefix] = namespace.uri;
+	}
+	//TODO: may want to ferret out duplicate attributes here.
+	if($.isArray(attributes)) {
+		svgWhiteList_[element].concat(attributes);
+		$.each(attributes,function(i,attr) {
+			svgWhiteListNS_[element][attr]=namespace.uri;
+		});
+	}
+	else {
+		svgWhiteList_[element].push(attributes); //single attribute here
+		svgWhiteListNS_[element][attributes]=namespace.uri
+	}
+}
+
 // Produce a Namespace-aware version of svgWhitelist
 var svgWhiteListNS_ = {};
 $.each(svgWhiteList_, function(elt, atts){

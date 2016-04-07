@@ -4319,7 +4319,7 @@ TODOS
 			});
 
 			var SIDEPANEL_MAXWIDTH = 300;
-			var SIDEPANEL_OPENWIDTH = 150;
+			var SIDEPANEL_OPENWIDTH = 300;
 			var sidedrag = -1, sidedragging = false, allowmove = false;
 
 			var changeSidePanelWidth = function(delta) {

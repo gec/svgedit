@@ -1,0 +1,149 @@
+/*
+ * greenbus-views
+ * https://github.com/gec/fisheye-views
+
+ * Version: 0.1.0-SNAPSHOT - 2016-04-06
+ * License: Apache-2.0
+ */
+
+
+.properties-panel-content div.voltage-group {
+    width: 45%;
+    margin-top: .5em;
+    margin-right: 1em;
+    float: left;
+}
+
+.properties-panel-content ul.listbox {
+	list-style: none;
+	padding-left: 0px;
+
+	border: 1px solid #888A85;
+    height: 7.4em;
+    overflow: auto;
+    margin-top: 0;
+}
+.properties-panel-content li {
+	height: 18px;
+	padding: 2px;
+	cursor: pointer;
+}
+.properties-panel-content li:nth-child(even) {
+	background-color: #C4C9CF;
+}
+.properties-panel-content li:hover {
+	background-color: darkgrey;
+}
+#svg_editor #sidepanels .tool {
+	border-top: none;
+}
+
+.properties-panel-content ul.listbox.voltages {
+    height: 7.4em;
+}
+.properties-panel-content ul.listbox.symbols {
+    height: 14.8em;
+}
+
+.properties-panel-content .paint-chip {
+	height: 16px;
+	width: 16px;
+	float: left;
+	margin-right: 7px;
+}
+
+.properties-panel-content {
+    padding: 1em 1em;
+    min-height: 180px;
+    overflow: auto;
+}
+.properties-panel-container h3 {
+    padding: 3px 6px 2px;
+}
+.properties-panel-content label, .properties-panel-content input, .properties-panel-content select {
+    display:block;
+}
+.properties-panel-content label {
+    margin: 8px 0 0px;
+}
+.properties-panel-content input, .properties-panel-content select {
+    width:100%;
+    padding:0;
+    margin: 4px 0 2px;
+}
+
+svg:not(:root), symbol {
+	overflow: visible;
+}
+.symbol {
+	stroke:white;
+	stroke-width: 2px;
+	background-color:transparent;
+}
+.clickable {
+	cursor:pointer;
+}
+.clickable text {
+	text-decoration:underline;
+}
+.navigation-area {
+	fill-opacity:0;
+	fill:#000000;
+}
+.navigation-area:hover {
+	fill-opacity:0.3;
+	fill:#008080;
+	stroke:gray;
+	stroke-width:2px;
+}
+
+text {
+	font-family:Verdana;
+}
+text.default {
+	fill:white;
+	font-size:12px;
+}
+text.data-label {
+	font-size:11;
+	fill:#FFFF00;
+}
+text.symbol-label {
+	font-size:11;
+	font-weight:lighter;
+	fill:#FFFFFF;
+	text-decoration:none !important;
+	color:white;
+}
+p.equipment-label {
+	color:white;
+	font-size:18px;
+	text-align:center;
+	word-wrap:break-word;
+}
+
+
+.voltage-220k{
+	stroke-width:1px;
+	stroke:red;
+}
+
+.voltage-1v{
+	stroke-width:1px;
+	stroke:blue;
+}
+
+.voltage-10mv{
+	stroke-width:1px;
+	stroke:yellow;
+}
+
+
+/* "fill" needed for the lineconnector symbol cirlces and busbar. Won't work for new line paths that zig or zag. */
+.voltage-22kV { stroke-width:1px; stroke:#ef2929;  }
+.voltage-7_2kV { stroke-width:1px; stroke:#fce94f; }
+.voltage-277V { stroke-width:1px; stroke:aqua;  }
+.voltage-240V { stroke-width:1px; stroke:#729fcf;  }
+.voltage-208V { stroke-width:1px; stroke:deeppink; }
+.voltage-120V { stroke-width:1px; stroke:purple;  }
+
