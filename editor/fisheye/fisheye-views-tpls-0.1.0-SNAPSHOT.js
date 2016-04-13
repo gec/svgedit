@@ -2145,18 +2145,18 @@ controller('fvAddSymbolController', ['$scope', 'svgedit', 'symbolLibrary',
 
           circuitbreaker:
           '<svg xmlns="http://www.w3.org/2000/svg" xmlns:svg="http://www.w3.org/2000/svg" xmlns:tgs="http://www.totalgrid.org" tgs:symbol-type="circuitbreaker" tgs:schematic-type="equipment-symbol" class="symbol" preserveAspectRatio="xMaxYMax">' +
-            '<g tgs:state="open" display="none"><rect x="2" y="2" width="30" height="30" fill="#00FF00" /></g>' +
-            '<g tgs:state="closed" ><rect x="2" y="2" width="30" height="30" fill="#A40000" /></g>' +
+            '<g tgs:state="Open" display="none"><rect x="0" y="0" width="30" height="30" fill="#00FF00" /></g>' +
+            '<g tgs:state="Closed" ><rect x="2" y="2" width="30" height="30" fill="#A40000" /></g>' +
           '</svg>',
 
           transformer:
           '<svg xmlns="http://www.w3.org/2000/svg" xmlns:svg="http://www.w3.org/2000/svg" xmlns:tgs="http://www.totalgrid.org" tgs:symbol-type="transformer" tgs:schematic-type="equipment-symbol" class="symbol" preserveAspectRatio="xMaxYMax">' +
             '<g tgs:state="default" >' +
-              '<g fill="none" stroke-width="2px" tgs:voltageGroup="high">' +
-                '<path d="M 1 0.5 A 5 5 0 0 1 0 14"/> <path d="M 1 14 A 5 5 0 0 1 0 27.5"/> <path d="M 1 27.5 A 5 5 0 0 1 0 41"/> <path d="M 1 41 A 5 5 0 0 1 0 54.5"/> <path d="M 14 0.5 L 14 54.5"/>' +
+              '<g tgs:voltageGroup="high" fill="none" stroke-width="2">' +
+                '<path d="M1,3 A5,5 0 0 1 0,16.475 "/> <path d="M1,16.475 A5,5 0 0 1 0,29.975 "/> <path d="M1,29.975 A5,5 0 0 1 0,43.475 "/> <path d="M1,43.475 A5,5 0 0 1 0,56.975 "/> <path d="M14,2.975 L14,56.975 "/>' +
               '</g>' +
-              '<g fill="none" stroke-width="2px" tgs:voltageGroup="low">' +
-                '<path d="M 22 0.5 L 22 54.5"/> <path d="M 35 0.5 A 5 5 0 0 0 34 14"/> <path d="M 35 14 A 5 5 0 0 0 34 27.5"/> <path d="M 35 27.5 A 5 5 0 0 0 34 41"/> <path d="M 35 41 A 5 5 0 0 0 34 54.5"/>' +
+              '<g tgs:voltageGroup="low" fill="none" stroke-width="2">' +
+                '<path d="M22,2.975 L22,56.975 "/> <path d="M35,2.975 A5,5 0 0 0 34,16.475 "/> <path d="M35,16.475 A5,5 0 0 0 34,29.975 "/> <path d="M35,29.975 A5,5 0 0 0 34,43.475 "/> <path d="M35,43.475 A5,5 0 0 0 34,56.975 "/>' +
               '</g>' +
             '</g>' +
           '</svg>'
@@ -2335,7 +2335,7 @@ filter( 'voltageColorExtractor', function () {
 
 angular.module("fisheye.views.template/openSchematic/openSchematic.html", []).run(["$templateCache", function($templateCache) {
   $templateCache.put("fisheye.views.template/openSchematic/openSchematic.html",
-    "<div  id=\"open-schematic-dialog\" class=\"ngdialog-message\" title=\"Open Schematic\" style-=\"display: none;\">\n" +
+    "<div  id=\"open-schematic-dialog\" class=\"ngdialog-message\" title=\"Open Schematic\" style=\"display: none;\">\n" +
     "    <h3 style=\"margin-top:0; margin-bottom: 0.5em;\">Open Schematic</h3>\n" +
     "    <select id=\"schematic-selector\" size=\"10\" style=\"width: 100%;margin-bottom:1em;\"  ng-multiple=\"true\" ng-options=\"s.name for s in schematics\" ng-model=\"selectedSchematic\"></select>\n" +
     "    <div class=\"ngdialog-buttons\">\n" +
