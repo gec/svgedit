@@ -4790,11 +4790,14 @@ this.importSvgStringAsSvgElement = function(xmlString) {
 			$(svg).attr( {x: canvasw / 2, y: canvash / 2});
 		}
 
+		this.groupSvgElem( svg);  //  groupSvg should return the group, but doesn't any more
+		var g = svg.parentNode;
 
-		(current_group || getCurrentDrawing().getCurrentLayer()).appendChild(svg);
-		batchCmd.addSubCommand(new svgedit.history.InsertElementCommand(svg));
+		var currentLayer = current_group || getCurrentDrawing().getCurrentLayer()
+		currentLayer.appendChild(g);
+		batchCmd.addSubCommand(new svgedit.history.InsertElementCommand(g));
 		clearSelection();
-		addToSelection([use_el]);
+		addToSelection([g]);
 
 		addCommandToHistory(batchCmd);
 		call("changed", [svgcontent]);

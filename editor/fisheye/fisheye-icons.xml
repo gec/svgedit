@@ -1,0 +1,45 @@
+<svg xmlns="http://www.w3.org/2000/svg">
+    <!--
+        Sample icons file. This file looks like an SVG file with groups as its
+        children. Each group element has an ID that must match the ID of the button given
+        in the extension. The SVG inside the group makes up the actual icon, and
+        needs use a viewBox instead of width/height for it to scale	properly.
+
+        Multiple icons can be included, each within their own group.
+    -->
+    <g id="analog_point_icon">
+        <svg width="102" height="102" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+            <!-- Created with SVG-edit - http://svg-edit.googlecode.com/ -->
+            <g>
+                <title>Layer 1</title>
+                <path id="svg_16" d="m10,50c0,0 20,-50 40,0c20,50 40,0 40,0" stroke-linecap="null"
+                      stroke-linejoin="null" stroke-dasharray="null" stroke-width="10" stroke="#333333" fill="none"/>
+            </g>
+        </svg>
+    </g>
+    <g id="status_point_icon">
+        <svg width="102" height="102" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+            <!-- Created with SVG-edit - http://svg-edit.googlecode.com/ -->
+            <g>
+                <title>Layer 1</title>
+                <path id="svg_13" d="m10,30l40,0l0,40l40,0" stroke-width="10" stroke="#333333" fill="none"/>
+            </g>
+        </svg>
+    </g>
+    <g id="navigation_layer_icon">
+        <svg  xmlns="http://www.w3.org/2000/svg" viewBox="0 0 212 212">
+            <!-- Created with SVG-edit - http://svg-edit.googlecode.com/ -->
+            <g>
+                <title>Layer 1</title>
+                <text fill="#000000" stroke="#000000" stroke-width="0" stroke-dasharray="null" stroke-linejoin="null" stroke-linecap="null" x="91.83318" y="39.32609" id="svg_10" font-size="24" font-family="Serif" text-anchor="middle" xml:space="preserve" transform="matrix(1.89474 0 0 1.48387 -68 -6.77419)">N</text>
+                <circle fill="none" stroke="#000000" cx="106" cy="106" r="100" id="svg_7" stroke-width="12"/>
+                <text fill="#000000" stroke="#000000" stroke-width="0" stroke-dasharray="null" stroke-linejoin="null" stroke-linecap="null" x="90.86207" y="48.20502" id="svg_14" font-size="24" font-family="Serif" text-anchor="middle" xml:space="preserve" transform="matrix(1.16 0 0 1.25806 -73.64 56.8387)">W</text>
+                <path fill="#000000" stroke="#000000" stroke-width="0" stroke-dasharray="null" stroke-linejoin="null" stroke-linecap="null" d="m45.5,46l28.9023,54l24.5977,-23.31819l-53.5,-30.68181z" id="svg_19"/>
+                <circle fill="#000000" stroke="#000000" stroke-dasharray="null" stroke-linejoin="null" stroke-linecap="null" cx="106" cy="105.53193" r="10" id="svg_9"/>
+                <text fill="#000000" stroke="#000000" stroke-width="0" stroke-dasharray="null" stroke-linejoin="null" stroke-linecap="null" x="91.38873" y="136.63044" font-size="24" font-family="Serif" text-anchor="middle" xml:space="preserve" transform="matrix(1.89474 0 0 1.48387 -68 -6.77419)" id="svg_11">S</text>
+  <text fill="#000000" stroke="#000000" stroke-width="0" stroke-dasharray="null" stroke-linejoin="null" stroke-linecap="null" x="22.77778" y="111.00011" id="svg_13" font-size="24" font-family="Serif" text-anchor="middle" xml:space="preserve" transform="matrix(1.8 0 0 1.25806 134.4 -22.1613)">E</text>
+                <path fill="none" stroke="#000000" stroke-width="5" stroke-dasharray="null" stroke-linejoin="null" stroke-linecap="null" d="m110.75,112l28.90199,54l24.59801,-23.31799l-53.5,-30.68201z" id="svg_20" transform="rotate(-180 137.5 139)"/>
+            </g>
+        </svg>
+    </g>
+</svg>

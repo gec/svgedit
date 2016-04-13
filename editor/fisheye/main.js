@@ -3,11 +3,13 @@ console.log( 'fisheye/main.js loading...')
 $(document).ready(function () {
   console.log( 'fisheye/main.js document ready...')
 
+  // We inject navigationLayerService so it will be initialized.
+  //
   var app = angular.module('fisheyeApp', [
     'fisheye.views'
-  ]).controller('fisheyeAppController', function() {
+  ]).controller('fisheyeAppController', [ 'navigationLayerService', 'voltageService', 'pointService', 'saveSchematic', function( navigationLayerService, voltageService, pointService, saveSchematic) {
     console.log( 'fisheyeAppController begin')
-  })
+  }])
   // No ng-app in index page. Bootstrap manually after RequireJS has dependencies loaded.
   angular.bootstrap(document, [ app.name /*'ReefAdmin'*/])
   // Because of RequireJS we need to bootstrap the app app manually

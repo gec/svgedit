@@ -2,11 +2,11 @@
  * greenbus-views
  * https://github.com/gec/fisheye-views
 
- * Version: 0.1.0-SNAPSHOT - 2016-04-07
+ * Version: 0.1.0-SNAPSHOT - 2016-04-13
  * License: Apache-2.0
  */
-angular.module("fisheye.views", ["fisheye.views.tpls", "fisheye.views.core","fisheye.views.model","fisheye.views.navigationLayer","fisheye.views.point","fisheye.views.property","fisheye.views.saveHandler","fisheye.views.selection","fisheye.views.svgedit","fisheye.views.symbol","fisheye.views.voltage"]);
-angular.module("fisheye.views.tpls", ["fisheye.views.template/property/properties.html","fisheye.views.template/symbol/addSymbol.html"]);
+angular.module("fisheye.views", ["fisheye.views.tpls", "fisheye.views.core","fisheye.views.model","fisheye.views.navigationLayer","fisheye.views.openSchematic","fisheye.views.point","fisheye.views.property","fisheye.views.saveSchematic","fisheye.views.selection","fisheye.views.svgedit","fisheye.views.symbol","fisheye.views.voltage"]);
+angular.module("fisheye.views.tpls", ["fisheye.views.template/openSchematic/openSchematic.html","fisheye.views.template/property/properties.html","fisheye.views.template/symbol/addSymbol.html"]);
 /**
  * Copyright 2014-2016 Green Energy Corp.
  *
@@ -69,37 +69,11 @@ angular.module('fisheye.views.core', ['ngResource']).
 
   }]).
 
-  factory('jqueryui', ['$compile',  function($compile){
-    'use strict';
-
-    var exports = {}
-
-
-    exports.openModal = function(element_id){
-      $(element_id).dialog('open')
-    }
-
-    exports.closeModal = function(element_id){
-      $(element_id).dialog('close')
-    }
-
-    exports.bindToAngular = function(element,scope){
-      $compile(element)(scope)
-    }
-
-    exports.dialog = function(selector,opts){
-      return $(selector).dialog(opts)
-    }
-
-    return exports
-
-  }]).
-
   factory( 'assets', ['$http', function ( $http ) {
     'use strict';
     return {
-      get: function ( assetName, callback ) {
-        $http.get( 'fisheye/data/asset/' + assetName ).success( callback );
+      get: function ( assetName, notifySuccess, notifyFailure ) {
+        $http.get( 'fisheye/data/asset/' + assetName ).then( notifySuccess, notifyFailure);
       }
     }
   }]).
@@ -113,6 +87,54 @@ angular.module('fisheye.views.core', ['ngResource']).
 
 
 
+
+/**
+ * Copyright 2014-2016 Green Energy Corp.
+ *
+ * Licensed to Green Energy Corp (www.greenenergycorp.com) under one or more
+ * contributor license agreements. See the NOTICE file distributed with this
+ * work for additional information regarding copyright ownership. Green Energy
+ * Corp licenses this file to you under the Apache License, Version 2.0 (the
+ * 'License'); you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an 'AS IS' BASIS, WITHOUT
+ * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+ * License for the specific language governing permissions and limitations under
+ * the License.
+ *
+ * Author: Flint O'Brien
+ */
+
+
+
+/**
+ *
+ */
+
+angular.module('fisheye.views.dialog', ['ngDialog']).
+
+
+factory('fvDialog', ['ngDialog',  function(ngDialog){
+  'use strict';
+
+  var exports = {}
+
+
+  exports.open = function(options){
+    return ngDialog.open(options)
+  }
+
+  exports.close = function(id, value){
+    ngDialog.close(id, value)
+  }
+
+  return exports
+
+}])
 
 var SVG_NS = 'http://www.w3.org/2000/svg',
     svgDomRclass = /[\n\t\r]/g,
@@ -692,7 +714,6 @@ factory( 'navigationLayerService', [ 'svgedit', '$rootScope', 'navigationLayerTo
   function normalizeLayers() {
     svgedit.canvas.renameCurrentLayer( FV.MODELING_LAYER_NAME );
     svgedit.canvas.createLayerDirectly( FV.NAVIGATION_LAYER_NAME );
-
   }
 
   function initializeNavigationLayer() {
@@ -704,7 +725,6 @@ factory( 'navigationLayerService', [ 'svgedit', '$rootScope', 'navigationLayerTo
     svgedit.canvas.setCurrentLayer( FV.MODELING_LAYER_NAME );
   }
 
-  $rootScope.$on( 'documentLoaded', initializeNavigationLayer );
   $rootScope.$on( 'documentLoaded', initializeNavigationLayer );
 
   svgedit.editor.addExtension( 'ext-fisheye-navigation-layer', function () {
@@ -739,6 +759,122 @@ factory( 'navigationLayerService', [ 'svgedit', '$rootScope', 'navigationLayerTo
  * contributor license agreements. See the NOTICE file distributed with this
  * work for additional information regarding copyright ownership. Green Energy
  * Corp licenses this file to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+ * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+ * License for the specific language governing permissions and limitations under
+ * the License.
+ *
+ * Author: Flint O'Brien
+ */
+
+
+/**
+ * Open a schematic from the server.
+ */
+
+angular.module('fisheye.views.openSchematic', ['fisheye.views.core', 'fisheye.views.svgedit', 'fisheye.views.dialog']).
+
+controller('fvOpenSchematicController', ['$scope', '$rootScope', 'svgedit', 'schematicPersistence', 'fvDialog',
+  function($scope, $rootScope, svgedit, schematicPersistence, fvDialog) {
+    'use strict';
+
+    var dialogId = '#open-schematic-dialog',
+        debug = true
+    $scope.schematics = schematicPersistence.query();
+    $scope.selectedSchematic = null;
+
+    function openDialog() {
+      loadAvailableSchematics()
+
+      fvDialog.open({
+        template: 'fisheye.views.template/openSchematic/openSchematic.html',
+        scope: $scope
+      }).closePromise.then(
+        function( data) {
+          console.log( 'success ' + JSON.stringify( data))
+          if( data.value !== 'Cancel') {
+            //$scope.selectedSchematic = data.value
+            schematicPersistence.get({
+              schematic : data.value.name + '.svg'
+            }, onSchematicLoaded, onSchematicLoadFailure);
+          }
+        },
+        function( data) {
+          console.log( 'open schematic failure ' + JSON.stringify( data))
+        }
+      )
+    }
+
+    function loadAvailableSchematics() {
+      schematicPersistence.query(
+        function(data) {
+          $scope.schematics = data;
+          if (data.length > 0) {
+            $scope.selectedSchematic = data[0];
+          }
+        },
+        function(data) {
+          console.log( 'loadAvailableSchematics failure ' + JSON.stringify( data))
+          if( debug) {
+            $scope.schematics = [{name:'One'}, {name: 'Two'}];
+            $scope.selectedSchematic = $scope.schematics[0];
+          }
+        }
+      )
+    }
+
+    function onSchematicLoaded(data) {
+      svgedit.loadFromString(data.schematic);
+      $rootScope.$broadcast('documentLoaded')
+    }
+    function onSchematicLoadFailure(data) {
+      console.log( 'load schematic failure ' + JSON.stringify( data))
+      if( debug) {
+        var minimalSvg = '<svg height="480" width="640" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns:tgs="http://www.totalgrid.org" style="background-color:black"  name="One" version="1.0"><g><title>Layer 1</title><text x="40" y="14" font-size="10" font-family="serif" font-weight="bold" fill="white">Debug Schematic</text></g></svg>'
+        svgedit.loadFromString( minimalSvg)
+        $rootScope.$broadcast('documentLoaded')
+      }
+    }
+
+    function init() {
+      svgedit.editor.addExtension('ext-fisheye-opensave', {
+        callback : function() {
+          svgedit.setCustomHandlers({
+            open : openDialog
+          });
+        }
+      });
+    }
+    init();
+
+  }
+]).
+
+directive('fvOpenSchematic', function() {
+  'use strict';
+  return {
+    restrict:    'E', // Element name
+    scope:       true,
+    templateUrl: 'fisheye.views.template/openSchematic/openSchematic.html',
+    controller:  'fvOpenSchematicController'
+  }
+})
+
+
+
+/**
+ * Copyright 2014-2016 Green Energy Corp.
+ *
+ * Licensed to Green Energy Corp (www.greenenergycorp.com) under one or more
+ * contributor license agreements. See the NOTICE file distributed with this
+ * work for additional information regarding copyright ownership. Green Energy
+ * Corp licenses this file to you under the Apache License, Version 2.0 (the
  * 'License'); you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
@@ -761,37 +897,37 @@ factory( 'navigationLayerService', [ 'svgedit', '$rootScope', 'navigationLayerTo
 
 angular.module('fisheye.views.point', ['fisheye.views.core']).
 
-factory( 'pointService', [ 'svgedit', 'jquery', function (svgedit, jquery) {
+factory( 'pointService', [ '$rootScope', 'svgedit', 'jquery', function ($rootScope, svgedit, jquery) {
   'use strict';
 
   var exports = {}
 
 
-  var QUALITY_INVALID = ''+
-	'<svg xmlns="http://www.w3.org/2000/svg">'+
-	' <title>Quality Invalid</title>'+
-	' <g id="quality_invalid" stroke-opacity="1">'+
-	'  <path id="svg_21" d="m7.5,5c0,0 2.5,0 5,0c2.5,0 2.5,0 2.5,2.5c0,2.5 0,2.5 0,5c0,2.5 0,2.5 -2.5,2.5c-2.5,0 -2.5,0 -5,0c-2.5,0 -2.5,0 -2.5,-2.5c0,-2.5 0,-2.5 0,-5c0,-2.5 0,-2.5 2.5,-2.5z" stroke="#999999" fill="#FF0000"/>'+
-	'  <text id="svg_22" fill="#FFFFFF" stroke="#999999" stroke-width="0" stroke-dasharray="null" stroke-linejoin="null" stroke-linecap="null" x="10" y="14" font-size="10" font-family="serif" text-anchor="middle" space="preserve" fill-opacity="1" stroke-opacity="1" transform="" font-weight="bold">X</text>'+
-	' </g>'+
-	'</svg>'
-
-  var QUALITY_QUESTIONABLE = ''+
-	'<svg xmlns="http://www.w3.org/2000/svg">'+
-	' <title>Quality Questionable</title>'+
-	' <g id="quality_questionable" stroke-opacity="1">'+
-	'  <path id="svg_23" d="m7.5,5c0,0 2.5,0 5,0c2.5,0 2.5,0 2.5,2.5c0,2.5 0,2.5 0,5c0,2.5 0,2.5 -2.5,2.5c-2.5,0 -2.5,0 -5,0c-2.5,0 -2.5,0 -2.5,-2.5c0,-2.5 0,-2.5 0,-5c0,-2.5 0,-2.5 2.5,-2.5z" stroke="#999999" fill="#FFFF00"/>'+
-	'  <text id="svg_24" fill="#000000" stroke="#999999" stroke-width="0" stroke-dasharray="null" stroke-linejoin="null" stroke-linecap="null" x="10" y="14" font-size="10" font-family="serif" text-anchor="middle" space="preserve" fill-opacity="1" stroke-opacity="1" transform="" font-weight="bold">?</text>'+
-	' </g>'+
-	'</svg>'
-
-  /**
-   * We need an empty symbol for use element to reference #quality_good at Atoll run time.
-   */
-  var QUALITY_GOOD = ''+
-	'<svg xmlns="http://www.w3.org/2000/svg">'+
-	' <title>Quality Good</title>'+
-	'</svg>'
+  var DEFAULT_QUALITY_SIZE = {
+        width: 10,
+        height: 10
+      },
+      QUALITY_INVALID      = '' +
+        '<svg xmlns="http://www.w3.org/2000/svg">' +
+        ' <title>Quality Invalid</title>' +
+        ' <g id="quality_invalid" stroke-opacity="1">' +
+        '  <path id="svg_21" d="m7.5,5c0,0 2.5,0 5,0c2.5,0 2.5,0 2.5,2.5c0,2.5 0,2.5 0,5c0,2.5 0,2.5 -2.5,2.5c-2.5,0 -2.5,0 -5,0c-2.5,0 -2.5,0 -2.5,-2.5c0,-2.5 0,-2.5 0,-5c0,-2.5 0,-2.5 2.5,-2.5z" stroke="#999999" fill="#FF0000"/>' +
+        '  <text id="svg_22" fill="#FFFFFF" stroke="#999999" stroke-width="0" stroke-dasharray="null" stroke-linejoin="null" stroke-linecap="null" x="10" y="14" font-size="10" font-family="serif" text-anchor="middle" space="preserve" fill-opacity="1" stroke-opacity="1" transform="" font-weight="bold">X</text>' +
+        ' </g>' +
+        '</svg>',
+      QUALITY_QUESTIONABLE = '' +
+        '<svg xmlns="http://www.w3.org/2000/svg">' +
+        ' <title>Quality Questionable</title>' +
+        ' <g id="quality_questionable" stroke-opacity="1">' +
+        '  <path id="svg_23" d="m7.5,5c0,0 2.5,0 5,0c2.5,0 2.5,0 2.5,2.5c0,2.5 0,2.5 0,5c0,2.5 0,2.5 -2.5,2.5c-2.5,0 -2.5,0 -5,0c-2.5,0 -2.5,0 -2.5,-2.5c0,-2.5 0,-2.5 0,-5c0,-2.5 0,-2.5 2.5,-2.5z" stroke="#999999" fill="#FFFF00"/>' +
+        '  <text id="svg_24" fill="#000000" stroke="#999999" stroke-width="0" stroke-dasharray="null" stroke-linejoin="null" stroke-linecap="null" x="10" y="14" font-size="10" font-family="serif" text-anchor="middle" space="preserve" fill-opacity="1" stroke-opacity="1" transform="" font-weight="bold">?</text>' +
+        ' </g>' +
+        '</svg>',
+      // We need an empty symbol for use element to reference #quality_good at Atoll run time.
+      QUALITY_GOOD         = '' +
+        '<svg xmlns="http://www.w3.org/2000/svg">' +
+        ' <title>Quality Good</title>' +
+        '</svg>'
   // Green box with check mark for debugging.
   // <g id="quality_good" stroke-opacity="1">
   //  <path id="svg_23" d="m7.5,5c0,0 2.5,0 5,0c2.5,0 2.5,0 2.5,2.5c0,2.5 0,2.5 0,5c0,2.5 0,2.5 -2.5,2.5c-2.5,0 -2.5,0 -5,0c-2.5,0 -2.5,0 -2.5,-2.5c0,-2.5 0,-2.5 0,-5c0,-2.5 0,-2.5 2.5,-2.5z" stroke="#999999" fill="#00DD00"/>
@@ -857,6 +993,8 @@ factory( 'pointService', [ 'svgedit', 'jquery', function (svgedit, jquery) {
     getNextId = S.getNextId;
     InsertElementCommand = S.InsertElementCommand;
 
+    exports.ensureQualitySymbolsInDefs();
+
     return {
       name:'Point',
       svgicons:'fisheye/fisheye-icons.xml',
@@ -880,6 +1018,7 @@ factory( 'pointService', [ 'svgedit', 'jquery', function (svgedit, jquery) {
       mouseUp:function ( opts ) {
         // Check the mode on mouseup
         if ( svgedit.canvas.getMode() == MODE_ID ) {
+          exports.ensureQualitySymbolsInDefs();
 
           var origin = getMouseOrigin( opts );
           var g = makePointElements( origin );
@@ -915,7 +1054,8 @@ factory( 'pointService', [ 'svgedit', 'jquery', function (svgedit, jquery) {
    */
   function makeSymbolFromString( id, xmlString ) {
 
-    var svg = svgedit.canvas.makeSvgElementFromString( xmlString );
+    //var svg = svgedit.canvas.makeSvgElementFromString( xmlString );
+    var svg = svgedit.utilities.text2xml(xmlString).firstChild
 
     var innerw = svgedit.canvas.convertToNum( 'width', svg.getAttribute( 'width' ) ),
         innerh = svgedit.canvas.convertToNum( 'height', svg.getAttribute( 'height' ) ),
@@ -1001,21 +1141,48 @@ factory( 'pointService', [ 'svgedit', 'jquery', function (svgedit, jquery) {
     return text;
   }
 
+  function makeUseElementForSymbol( symbol, transform) {
+
+    var use_el = svgdoc.createElementNS(SVGNS, 'use');
+    use_el.id = getNextId();
+    // This can't be any href. It must be xlink:href for the getBBox call to work!
+    svgedit.utilities.setHref( use_el, '#' + symbol.id)
+    if( transform && transform !== '') {
+      use_el.setAttribute('transform', transform);
+    }
+
+    $(use_el).data('symbol', symbol).data('ref', symbol);
+
+    return use_el;
+  }
+
+  function getQualityBBox( qualityUse) {
+    var bBox = svgedit.utilities.getBBox( qualityUse );
+    if( bBox.width === 0)
+      bBox.width = DEFAULT_QUALITY_SIZE.width
+    if( bBox.height === 0)
+      bBox.height = DEFAULT_QUALITY_SIZE.height
+    return bBox
+  }
+
   function makeQualityUseElement( origin ) {
     // The quality box origin is top left. The text origin is lower left (not including descenders).
     // Translate quality to be left of text and bottom aligned.
     //
     var transform = '';
-    var quality = svgedit.canvas.addUseElementForSymbol( symbolQualityQuestionable, transform );
-    var bBox = svgedit.utilities.getBBox( quality );
+    var qualityUse = makeUseElementForSymbol( symbolQualityQuestionable, transform );
+    // Append to actual document so the bBox will work (zero otherwise).
+    // Later, we group it with text.
+    svgedit.canvas.getCurrentLayer().appendChild(qualityUse);
+    var bBox = getQualityBBox( qualityUse );
     var margin = bBox.width / 2;
     var tx = origin.x - bBox.x - bBox.width - margin;
     var ty = origin.y - bBox.y - bBox.height + 2;  // add 2 and it's perfect!
-    quality.setAttributeNS( null, 'transform', 'translate(' + tx + ',' + ty + ')' );
-    quality.setAttributeNS( null, 'class', 'quality-display' );
-    quality.setAttributeNS( fisheye.constants.namespace.uri, fisheye.constants.attributes.nsSchematicType, 'quality-display' );
+    qualityUse.setAttributeNS( null, 'transform', 'translate(' + tx + ',' + ty + ')' );
+    qualityUse.setAttributeNS( null, 'class', 'quality-display' );
+    qualityUse.setAttributeNS( FV.namespace.uri, FV.attributes.nsSchematicType, 'quality-display' );
 
-    return quality;
+    return qualityUse;
   }
 
   function makeGroupElementWithChildren( children ) {
@@ -1031,8 +1198,8 @@ factory( 'pointService', [ 'svgedit', 'jquery', function (svgedit, jquery) {
       g.appendChild( this );
     } );
     g.setAttributeNS( null, 'class', 'point' );
-    g.setAttributeNS( fisheye.constants.namespace.uri, fisheye.constants.attributes.nsSchematicType, 'point' );
-    g.setAttributeNS( fisheye.constants.namespace.uri, fisheye.constants.attributes.nsPointName, '' );
+    g.setAttributeNS( FV.namespace.uri, FV.attributes.nsSchematicType, 'point' );
+    g.setAttributeNS( FV.namespace.uri, FV.attributes.nsPointName, '' );
 
     return g;
   }
@@ -1057,8 +1224,7 @@ factory( 'pointService', [ 'svgedit', 'jquery', function (svgedit, jquery) {
     }
   };
 
-  exports.ensureQualitySymbolsInDefs();
-
+  $rootScope.$on( 'documentLoaded', exports.ensureQualitySymbolsInDefs );
 
   return exports
 
@@ -1113,7 +1279,10 @@ controller('fvPropertiesController', ['$scope', 'svgedit', 'selectionService', '
     $scope.actions = [ACTION_NONE, 'command', 'summary'];
 
     $scope.voltageableItemSelected = false;
-    $scope.voltages = voltageService.voltages;
+    $scope.voltages = []
+    voltageService.voltages.then( function( voltages) {
+      $scope.voltages = voltages
+    });
     $scope.voltageGroups = [];
     $scope.selectedVoltageGroup = null;
 
@@ -1296,9 +1465,9 @@ directive('fvProperties', function() {
  *
  */
 
-angular.module('fisheye.views.saveHandler', ['fisheye.views.core']).
+angular.module('fisheye.views.saveSchematic', ['fisheye.views.core']).
 
-factory( 'saveHandler', [ '$rootScope', 'svgedit', 'schematicPersistence', 'browser', 'jquery', function( $rootScope, svgedit, schematicPersistence, browser, jquery) {
+factory( 'saveSchematic', [ '$rootScope', 'svgedit', 'schematicPersistence', 'browser', 'jquery', function( $rootScope, svgedit, schematicPersistence, browser, jquery) {
   'use strict';
 
   var exports = {}
@@ -1443,6 +1612,9 @@ function FvSelectionObjectFactory( model, jquery) {
 
 
 FvSelectionObjectFactory.prototype.parse = function ( element, navLayerActive ) {
+  if( !element)
+    return null
+
   var symbol = this.findActualSymbol( element);
 
   if ( symbol ) {
@@ -1467,6 +1639,9 @@ FvSelectionObjectFactory.prototype.isNavigationArea = function ( element) {
 }
 
 FvSelectionObjectFactory.prototype.findActualSymbol = function ( element) {
+  if( !element)
+    return null
+
   var gElementOrSymbol = this.$( element );
 
   // The list of selected elements from svg-edit could be a list of svg
@@ -1761,6 +1936,10 @@ factory( 'svgedit', [ '$rootScope', 'jquery', function ($rootScope, jquery) {
       return svgCanvas.getMode();
     },
 
+    getCurrentLayer: function(){
+      return svgCanvas.getCurrentDrawing().getCurrentLayer();
+    },
+
     getCurrentLayerName: function(){
       return svgCanvas.getCurrentDrawing().getCurrentLayerName();
     },
@@ -1807,6 +1986,11 @@ factory( 'svgedit', [ '$rootScope', 'jquery', function ($rootScope, jquery) {
 
     call: function (event,arg){
       svgCanvas.call(event,arg);
+    },
+
+    callChanged: function (){
+      var svgcontent = svgCanvas.getContentElem()
+      svgCanvas.call('changed',[svgcontent]);
     },
 
     addUseElementForSymbol: function(symbol,ts){
@@ -1950,25 +2134,31 @@ controller('fvAddSymbolController', ['$scope', 'svgedit', 'symbolLibrary',
           { 'name': 'Transformer', 'uri': 'transformer'}
         ],
         defaultSymbolSvg = {
-          capacitor: '<svg xmlns="http://www.w3.org/2000/svg" xmlns:svg="http://www.w3.org/2000/svg" xmlns:tgs="http://www.totalgrid.org" tgs:symbol-type="capacitor" tgs:schematic-type="equipment-symbol" class="symbol" preserveAspectRatio="xMaxYMax">' +
-          '<g tgs:state="default" >' +
-          '<line x1="10" y1="0" x2="10" y2="15" /><line x1="0" y1="21" x2="20" y2="21" /><line x1="10" y1="21" x2="10" y2="36" />' +
-          '<path d="M 0 5 A 5 5 0 0 0 20 5" style="fill:none;"/>' +
-          '</g>' +
-          '</svg>',
-          circuitbreaker: '<svg xmlns="http://www.w3.org/2000/svg" xmlns:svg="http://www.w3.org/2000/svg" xmlns:tgs="http://www.totalgrid.org" tgs:symbol-type="circuitbreaker" tgs:schematic-type="equipment-symbol" class="symbol" preserveAspectRatio="xMaxYMax" width="30" height="30">' +
-          '<g tgs:state="open" display="none"><rect x="2" y="2" width="30" height="30" style="fill:#00FF00" /></g>' +
-          '<g tgs:state="closed" ><rect x="2" y="2" width="30" height="30" style="fill:#A40000" /></g>' +
-          '</svg>',
-          transformer:    '<svg xmlns="http://www.w3.org/2000/svg" xmlns:svg="http://www.w3.org/2000/svg" xmlns:tgs="http://www.totalgrid.org" tgs:symbol-type="transformer" tgs:schematic-type="equipment-symbol" class="symbol" preserveAspectRatio="xMaxYMax">' +
-          '<g tgs:state="default" >' +
-            '<g style="fill:none;stroke-width:2px" tgs:voltageGroup="high">' +
-              '<path d="M 1 0.5 A 5 5 0 0 1 0 14"/> <path d="M 1 14 A 5 5 0 0 1 0 27.5"/> <path d="M 1 27.5 A 5 5 0 0 1 0 41"/> <path d="M 1 41 A 5 5 0 0 1 0 54.5"/> <path d="M 14 0.5 L 14 54.5"/>' +
+
+          capacitor:
+          '<svg xmlns="http://www.w3.org/2000/svg" xmlns:svg="http://www.w3.org/2000/svg" xmlns:tgs="http://www.totalgrid.org" tgs:symbol-type="capacitor" tgs:schematic-type="equipment-symbol" class="symbol" preserveAspectRatio="xMaxYMax">' +
+            '<g tgs:state="default" >' +
+              '<line x1="10" y1="0" x2="10" y2="15" /><line x1="0" y1="21" x2="20" y2="21" /><line x1="10" y1="21" x2="10" y2="36" />' +
+              '<path d="M 0 5 A 5 5 0 0 0 20 5" fill="none"/>' +
             '</g>' +
-            '<g style="fill:none;stroke-width:2px" tgs:voltageGroup="low">' +
-              '<path d="M 22 0.5 L 22 54.5"/> <path d="M 35 0.5 A 5 5 0 0 0 34 14"/> <path d="M 35 14 A 5 5 0 0 0 34 27.5"/> <path d="M 35 27.5 A 5 5 0 0 0 34 41"/> <path d="M 35 41 A 5 5 0 0 0 34 54.5"/>' +
+          '</svg>',
+
+          circuitbreaker:
+          '<svg xmlns="http://www.w3.org/2000/svg" xmlns:svg="http://www.w3.org/2000/svg" xmlns:tgs="http://www.totalgrid.org" tgs:symbol-type="circuitbreaker" tgs:schematic-type="equipment-symbol" class="symbol" preserveAspectRatio="xMaxYMax">' +
+            '<g tgs:state="open" display="none"><rect x="2" y="2" width="30" height="30" fill="#00FF00" /></g>' +
+            '<g tgs:state="closed" ><rect x="2" y="2" width="30" height="30" fill="#A40000" /></g>' +
+          '</svg>',
+
+          transformer:
+          '<svg xmlns="http://www.w3.org/2000/svg" xmlns:svg="http://www.w3.org/2000/svg" xmlns:tgs="http://www.totalgrid.org" tgs:symbol-type="transformer" tgs:schematic-type="equipment-symbol" class="symbol" preserveAspectRatio="xMaxYMax">' +
+            '<g tgs:state="default" >' +
+              '<g fill="none" stroke-width="2px" tgs:voltageGroup="high">' +
+                '<path d="M 1 0.5 A 5 5 0 0 1 0 14"/> <path d="M 1 14 A 5 5 0 0 1 0 27.5"/> <path d="M 1 27.5 A 5 5 0 0 1 0 41"/> <path d="M 1 41 A 5 5 0 0 1 0 54.5"/> <path d="M 14 0.5 L 14 54.5"/>' +
+              '</g>' +
+              '<g fill="none" stroke-width="2px" tgs:voltageGroup="low">' +
+                '<path d="M 22 0.5 L 22 54.5"/> <path d="M 35 0.5 A 5 5 0 0 0 34 14"/> <path d="M 35 14 A 5 5 0 0 0 34 27.5"/> <path d="M 35 27.5 A 5 5 0 0 0 34 41"/> <path d="M 35 41 A 5 5 0 0 0 34 54.5"/>' +
+              '</g>' +
             '</g>' +
-          '</g>' +
           '</svg>'
         }
 
@@ -2056,7 +2246,18 @@ angular.module('fisheye.views.voltage', ['fisheye.views.core']).
 factory( 'voltageService', [ 'browser', 'assets', '$q', function (browser, assets, $q) {
   'use strict';
 
-  var exports = {}
+  var exports = {},
+      debug = true,
+      defaultVoltagesCSS =
+        '.voltage-220k  { stroke-width:1px; stroke:red; }' +
+        '.voltage-1v    { stroke-width:1px; stroke:blue; }' +
+        '.voltage-10mv  { stroke-width:1px; stroke:yellow; }' +
+        '.voltage-22kV  { stroke-width:1px; stroke:#ef2929;  }' +
+        '.voltage-7_2kV { stroke-width:1px; stroke:#fce94f; }' +
+        '.voltage-277V  { stroke-width:1px; stroke:aqua;  }' +
+        '.voltage-240V  { stroke-width:1px; stroke:#729fcf;  }' +
+        '.voltage-208V  { stroke-width:1px; stroke:deeppink; }' +
+        '.voltage-120V  { stroke-width:1px; stroke:purple;  }'
 
   //css file should end in voltage.css
   var voltageCssNameRegEx = new RegExp( '^voltage$'),
@@ -2088,22 +2289,61 @@ factory( 'voltageService', [ 'browser', 'assets', '$q', function (browser, asset
   }
 
   function loadCssFromServer( onCssLoaded ) {
-    assets.get( 'voltagecss', function ( css ) {
-      //Must insert CSS for it to be available during parsing.
-      //TODO: Is there a more direct way of getting a reference to this style element as a StyleSheetList
-      //  other than going through the browser? After all we are creating it right here, but jQuery doesn't give us an easy answer.
-      browser.addStyleElement( css );
-      onCssLoaded();
-    } );
+    assets.get( 'voltagecss',
+      function ( result ) {
+        var css = result.data
+        //Must insert CSS for it to be available during parsing.
+        //TODO: Is there a more direct way of getting a reference to this style element as a StyleSheetList
+        //  other than going through the browser? After all we are creating it right here, but jQuery doesn't give us an easy answer.
+        browser.addStyleElement( css )
+        onCssLoaded()
+      },
+      function ( result ) {
+        if( debug) {
+          browser.addStyleElement( defaultVoltagesCSS )
+          onCssLoaded()
+        }
+      }
+    )
   }
 
   loadCssFromServer( loadVoltageFromCss );
 
   return exports
 
-}])
+}]).
+
+filter( 'voltageStyleDisplay', function () {
+  return function ( input ) {
+    if ( input ) {
+      return input.replace( '.voltage-', '' );
+    }
+  }
+}).
+
+filter( 'voltageColorExtractor', function () {
+  return function ( voltage ) {
+    //voltages are instance of CssRule and voltage.style is an instance of CSSStyleDeclaration
+    if ( voltage && voltage.style && voltage.style.getPropertyValue && voltage.style.getPropertyValue( 'stroke' ) ) {
+      return voltage.style.getPropertyValue( 'stroke' );
+    }
+    return'';
+  }
+})
 
 
+
+angular.module("fisheye.views.template/openSchematic/openSchematic.html", []).run(["$templateCache", function($templateCache) {
+  $templateCache.put("fisheye.views.template/openSchematic/openSchematic.html",
+    "<div  id=\"open-schematic-dialog\" class=\"ngdialog-message\" title=\"Open Schematic\" style-=\"display: none;\">\n" +
+    "    <h3 style=\"margin-top:0; margin-bottom: 0.5em;\">Open Schematic</h3>\n" +
+    "    <select id=\"schematic-selector\" size=\"10\" style=\"width: 100%;margin-bottom:1em;\"  ng-multiple=\"true\" ng-options=\"s.name for s in schematics\" ng-model=\"selectedSchematic\"></select>\n" +
+    "    <div class=\"ngdialog-buttons\">\n" +
+    "        <button type=\"button\" class=\"ngdialog-button ngdialog-button-secondary\" ng-click=\"closeThisDialog('Cancel')\">Cancel</button>\n" +
+    "        <button type=\"button\" class=\"ngdialog-button ngdialog-button-primary\" ng-click=\"closeThisDialog(selectedSchematic)\">Open</button>\n" +
+    "    </div>\n" +
+    "</div>");
+}]);
 
 angular.module("fisheye.views.template/property/properties.html", []).run(["$templateCache", function($templateCache) {
   $templateCache.put("fisheye.views.template/property/properties.html",
@@ -2144,7 +2384,7 @@ angular.module("fisheye.views.template/property/properties.html", []).run(["$tem
     "                        </h3>\n" +
     "                        <ul class=\"listbox voltages\">\n" +
     "                            <li id=\"voltage{{voltage.selectorText}}\" ng-click=\"applyVoltage(voltage,group)\"\n" +
-    "                                ng-repeat=\"voltage in voltages\" class=\"voltage-list-item\">\n" +
+    "                                ng-repeat=\"voltage in $parent.voltages\" class=\"voltage-list-item\">\n" +
     "                                <div class=\"paint-chip\"\n" +
     "                                     style=\"background-color: {{voltage|voltageColorExtractor}}\"></div>\n" +
     "                                {{voltage.selectorText|voltageStyleDisplay}}\n" +
