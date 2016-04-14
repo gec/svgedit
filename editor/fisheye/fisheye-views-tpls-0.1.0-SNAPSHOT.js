@@ -2,7 +2,7 @@
  * greenbus-views
  * https://github.com/gec/fisheye-views
 
- * Version: 0.1.0-SNAPSHOT - 2016-04-13
+ * Version: 0.1.0-SNAPSHOT - 2016-04-14
  * License: Apache-2.0
  */
 angular.module("fisheye.views", ["fisheye.views.tpls", "fisheye.views.core","fisheye.views.model","fisheye.views.navigationLayer","fisheye.views.openSchematic","fisheye.views.point","fisheye.views.property","fisheye.views.saveSchematic","fisheye.views.selection","fisheye.views.svgedit","fisheye.views.symbol","fisheye.views.voltage"]);
@@ -861,7 +861,7 @@ directive('fvOpenSchematic', function() {
   return {
     restrict:    'E', // Element name
     scope:       true,
-    templateUrl: 'fisheye.views.template/openSchematic/openSchematic.html',
+    template: '', // fvDialog specifies the template. See fvDialog.open above.
     controller:  'fvOpenSchematicController'
   }
 })
@@ -2335,7 +2335,7 @@ filter( 'voltageColorExtractor', function () {
 
 angular.module("fisheye.views.template/openSchematic/openSchematic.html", []).run(["$templateCache", function($templateCache) {
   $templateCache.put("fisheye.views.template/openSchematic/openSchematic.html",
-    "<div  id=\"open-schematic-dialog\" class=\"ngdialog-message\" title=\"Open Schematic\" style=\"display: none;\">\n" +
+    "<div  id=\"open-schematic-dialog\" class=\"ngdialog-message\" title=\"Open Schematic\">\n" +
     "    <h3 style=\"margin-top:0; margin-bottom: 0.5em;\">Open Schematic</h3>\n" +
     "    <select id=\"schematic-selector\" size=\"10\" style=\"width: 100%;margin-bottom:1em;\"  ng-multiple=\"true\" ng-options=\"s.name for s in schematics\" ng-model=\"selectedSchematic\"></select>\n" +
     "    <div class=\"ngdialog-buttons\">\n" +
