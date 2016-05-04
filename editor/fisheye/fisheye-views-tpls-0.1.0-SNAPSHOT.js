@@ -2,7 +2,7 @@
  * greenbus-views
  * https://github.com/gec/fisheye-views
 
- * Version: 0.1.0-SNAPSHOT - 2016-04-14
+ * Version: 0.1.0-SNAPSHOT - 2016-05-04
  * License: Apache-2.0
  */
 angular.module("fisheye.views", ["fisheye.views.tpls", "fisheye.views.core","fisheye.views.model","fisheye.views.navigationLayer","fisheye.views.openSchematic","fisheye.views.point","fisheye.views.property","fisheye.views.saveSchematic","fisheye.views.selection","fisheye.views.svgedit","fisheye.views.symbol","fisheye.views.voltage"]);
@@ -637,6 +637,7 @@ factory( 'navigationLayerService', [ 'svgedit', '$rootScope', 'navigationLayerTo
 
 
   var isNavigationLayerShowing = false,
+      onChangedInProgress = false,
       unsupportedTools = [
         '#tool_fhpath',
         '#tools_line_show',
@@ -695,6 +696,8 @@ factory( 'navigationLayerService', [ 'svgedit', '$rootScope', 'navigationLayerTo
       $rootScope.$broadcast('navigationModeDeactivated');
       enableOtherTools();
     }
+    // setLayerVisibility doesn't update the layers panel, so we need to.
+    svgedit.canvas.call('changed', [svgedit.canvas.getCurrentLayer()])
   }
 
   function findAllLayers() {
@@ -725,7 +728,42 @@ factory( 'navigationLayerService', [ 'svgedit', '$rootScope', 'navigationLayerTo
     svgedit.canvas.setCurrentLayer( FV.MODELING_LAYER_NAME );
   }
 
+  function documentWasChanged( elems) {
+    if( elems && elems.length === 1) {
+      var elem = elems[0]
+      if( elem.tagName === 'svg' && elem.id === 'svgcontent')
+        return true;
+      if( elem.tagName === 'g') {
+        var parent = elem.parentNode
+        return parent && parent.tagName === 'svg' && parent.id === 'svgcontent'
+      }
+    }
+    return false;
+  }
+
+  function onChanged( window, elems) {
+    if( ! onChangedInProgress && documentWasChanged( elems)) {
+      // prevent reentering this code if normalizeLayers creates a layer (which generates nested onChanged event).
+      onChangedInProgress = true;
+
+      var layers = findAllLayers();
+      if ( !hasCorrectLayers( layers ) ) {
+        normalizeLayers();
+      }
+      if ( ! isNavigationLayerShowing ) {
+        svgedit.canvas.setLayerVisibility( FV.NAVIGATION_LAYER_NAME, false );
+        svgedit.canvas.setCurrentLayer( FV.MODELING_LAYER_NAME );
+      }
+
+      onChangedInProgress = false;
+    }
+
+    if( previousOnChanged)
+      return previousOnChanged( window, elems);
+  }
+
   $rootScope.$on( 'documentLoaded', initializeNavigationLayer );
+  var previousOnChanged = svgedit.canvas.bind('changed', onChanged);
 
   svgedit.editor.addExtension( 'ext-fisheye-navigation-layer', function () {
     var button = {
@@ -1208,20 +1246,25 @@ factory( 'pointService', [ '$rootScope', 'svgedit', 'jquery', function ($rootSco
   // Create the quality symbols and insert them into the defs section
   //
   exports.ensureQualitySymbolsInDefs = function () {
+    console.log( 'pointService.ensureQualitySymbolsInDefs begin')
     var defs = findDefs();
     var defs$ = jquery( defs );
     if ( defs$.children( '#quality_invalid' ).length <= 0 ) {
       symbolQualityInvalid = makeSymbolFromString( 'quality_invalid', QUALITY_INVALID );
       defs.appendChild( symbolQualityInvalid );
+      console.log( 'pointService.ensureQualitySymbolsInDefs added quality_invalid symbol to defs');
     }
     if ( defs$.children( '#quality_questionable' ).length <= 0 ) {
       symbolQualityQuestionable = makeSymbolFromString( 'quality_questionable', QUALITY_QUESTIONABLE );
       defs.appendChild( symbolQualityQuestionable );
+      console.log( 'pointService.ensureQualitySymbolsInDefs added quality_questionable symbol to defs');
     }
     if ( defs$.children( '#quality_good' ).length <= 0 ) {
       symbolQualityGood = makeSymbolFromString( 'quality_good', QUALITY_GOOD );
       defs.appendChild( symbolQualityGood );
+      console.log( 'pointService.ensureQualitySymbolsInDefs added quality_good symbol to defs');
     }
+    console.log( 'pointService.ensureQualitySymbolsInDefs end')
   };
 
   $rootScope.$on( 'documentLoaded', exports.ensureQualitySymbolsInDefs );
@@ -1925,7 +1968,7 @@ factory( 'svgedit', [ '$rootScope', 'jquery', function ($rootScope, jquery) {
   exports.canvas = {
 
     bind: function(eventName,callback){
-      svgCanvas.bind(eventName,callback);
+      return svgCanvas.bind(eventName,callback);
     },
 
     setMode: function(mode){
@@ -1949,7 +1992,7 @@ factory( 'svgedit', [ '$rootScope', 'jquery', function ($rootScope, jquery) {
      * @param newLayerName  name of the new layer to add
      */
     createLayerDirectly: function(newLayerName){
-      svgCanvas.getCurrentDrawing().createLayer(newLayerName);
+      svgCanvas.createLayer(newLayerName, svgedit.history.HistoryRecordingService.NO_HISTORY);
     },
 
     setCurrentLayer: function(layerToSelect){
